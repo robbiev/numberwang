@@ -2,12 +2,12 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"strconv"
 	"bufio"
 	"bytes"
+	"fmt"
 	"github.com/atotto/clipboard"
+	"os"
+	"strconv"
 )
 
 func longestFile(line []rune) int {
@@ -53,11 +53,13 @@ func main() {
 		i = i + 1
 
 		if longest > 0 {
-			fmt.Println(strconv.Itoa(i), line[start:longest-1])
+			file := line[start : longest-1]
+			fmt.Println(strconv.Itoa(i), file)
 			for _, v := range argsWithoutProg {
 				n, _ := strconv.Atoi(v)
 				if n == i {
-					clip.WriteString(line[start:longest-1] + " ")
+					clip.WriteString(file)
+					clip.WriteString(" ")
 				}
 			}
 		} else {
