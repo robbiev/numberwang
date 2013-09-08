@@ -15,8 +15,10 @@ func longestFile(line []rune) int {
 	for i, _ := range line {
 		slice := line[0:i]
 		file := string(slice)
-		if _, err := os.Stat(file); err == nil {
-			max = i
+		if file != "/" && file != "." && file != "./" && file != ".." && file != "../" {
+			if _, err := os.Stat(file); err == nil {
+				max = i
+			}
 		}
 	}
 	return max
