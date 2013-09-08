@@ -30,7 +30,7 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	i := 0
+	lineNumber := 0
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -52,20 +52,20 @@ func main() {
 			}
 		}
 
-		i = i + 1
+		lineNumber = lineNumber + 1
 
 		if longest > 0 {
 			file := line[start : longest-1]
-			fmt.Println(strconv.Itoa(i), file)
+			fmt.Println(strconv.Itoa(lineNumber), file)
 			for _, v := range argsWithoutProg {
 				n, _ := strconv.Atoi(v)
-				if n == i {
+				if n == lineNumber {
 					clip.WriteString(file)
 					clip.WriteString(" ")
 				}
 			}
 		} else {
-			i = i - 1
+			lineNumber = lineNumber - 1
 			fmt.Print(line)
 		}
 	}
