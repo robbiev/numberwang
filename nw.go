@@ -69,5 +69,9 @@ func main() {
 			fmt.Print(line)
 		}
 	}
-	clipboard.WriteAll(clip.String())
+
+	clipboardOutput := clip.String()
+	if clipboardOutput != "" {
+		clipboard.WriteAll(clipboardOutput)
+	}
 }
