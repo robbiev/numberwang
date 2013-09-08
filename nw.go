@@ -1,11 +1,15 @@
+//http://stackoverflow.com/questions/8757389/reading-file-line-by-line-in-go
 package main
 
 import (
     "fmt"
     "os"
+//    "io"
     "strconv"
 //    "log"
     "bufio"
+    "github.com/atotto/clipboard"
+    "bytes"
 )
 
 func longestFile(line []rune) int {
@@ -23,6 +27,9 @@ func longestFile(line []rune) int {
 }
 
 func main() {
+    var clip bytes.Buffer
+    argsWithoutProg := os.Args[1:]
+    //fmt.Println(argsWithoutProg)
     reader := bufio.NewReader(os.Stdin)
 
     i := 0
@@ -32,6 +39,8 @@ func main() {
 
         if err != nil {
             // You may check here if err == io.EOF
+            //if err == io.EOF {
+            //}
             break
         }
 
@@ -53,8 +62,15 @@ func main() {
         if longest > 0 {
             //fmt.Println(start)
             //fmt.Println(longest)
-            fmt.Println("$NW"+strconv.Itoa(i), line[start:longest - 1])
-            err:=os.Setenv("NW"+ strconv.Itoa(i), line[start:longest -1])
+            fmt.Println(strconv.Itoa(i), line[start:longest - 1])
+            for _, v := range argsWithoutProg {
+              n, _ := strconv.Atoi(v)
+              if n == i  {
+                clip.WriteString(line[start:longest-1] + " ")
+                //clipboard.WriteAll(line[start:longest-1])
+              }
+            }
+            //err:=os.Setenv("NW"+ strconv.Itoa(i), line[start:longest -1])
             if err != nil {
               fmt.Println("ERROR")
             }
@@ -63,4 +79,5 @@ func main() {
             fmt.Print(line)
         }
     }
+    clipboard.WriteAll(clip.String())
 }
