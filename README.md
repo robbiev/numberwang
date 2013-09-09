@@ -1,4 +1,4 @@
-Detects valid file paths in stdin and numbers. Copies selected files to the clipboard.
+Numbers any valid file path in stdin (one per line). Copies chosen file names to the clipboard.
 
 ```
 $ ls
