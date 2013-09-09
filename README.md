@@ -1,3 +1,5 @@
+Detects valid file paths in stdin and numbers. Copies selected files to the clipboard.
+
 ```
 $ ls
 nw*  nw.go
