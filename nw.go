@@ -18,12 +18,23 @@ func osStatExists(file string) bool {
 	return err == nil
 }
 
+var ignoreList = [...]string{"/", ".", "./", "..", "../"}
+
+func ignored(file string) bool {
+	for _, val := range ignoreList {
+		if file == val {
+			return true
+		}
+	}
+	return false
+}
+
 func longestFileEndIndex(line []rune, exists existsFunc) int {
 	maxIndex := 0
 	for i, _ := range line {
 		slice := line[0 : i+1]
 		file := string(slice)
-		if file != "/" && file != "." && file != "./" && file != ".." && file != "../" {
+		if !ignored(file) {
 			if exists(file) {
 				maxIndex = i
 			}
