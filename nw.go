@@ -11,24 +11,31 @@ import (
 	"strconv"
 )
 
-func longestFileEndIndex(line []rune) int {
+type existsFunc func(string) bool
+
+func osStatExists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil
+}
+
+func longestFileEndIndex(line []rune, exists existsFunc) int {
 	maxIndex := 0
 	for i, _ := range line {
-		slice := line[0:i]
+		slice := line[0:i+1]
 		file := string(slice)
 		if file != "/" && file != "." && file != "./" && file != ".." && file != "../" {
-			if _, err := os.Stat(file); err == nil {
-				maxIndex = i - 1
+			if exists(file) {
+				maxIndex = i
 			}
 		}
 	}
 	return maxIndex
 }
 
-func longestFileInLine(line string) (firstCharIndex int, lastCharIndex int) {
+func longestFileInLine(line string, exists existsFunc) (firstCharIndex int, lastCharIndex int) {
 	for searchStartIndex, _ := range line {
 		searchSpace := []rune(line[searchStartIndex:len(line)])
-		lastCharIndexInSlice := longestFileEndIndex(searchSpace)
+		lastCharIndexInSlice := longestFileEndIndex(searchSpace, exists)
 		lastCharIndexInLine := lastCharIndexInSlice + searchStartIndex
 		if lastCharIndexInSlice > 0 && lastCharIndexInLine > lastCharIndex {
 			lastCharIndex = lastCharIndexInLine
@@ -50,13 +57,11 @@ func main() {
 
 	for {
 		line, err := reader.ReadString('\n')
-
 		if err != nil {
-			// check here if err == io.EOF
 			break
 		}
 
-		firstCharIndex, lastCharIndex := longestFileInLine(line)
+		firstCharIndex, lastCharIndex := longestFileInLine(line, osStatExists)
 
 		if lastCharIndex > 0 {
 			fileCount++
