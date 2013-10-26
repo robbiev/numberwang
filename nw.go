@@ -9,6 +9,8 @@ import (
 	"github.com/atotto/clipboard"
 	"os"
 	"strconv"
+
+//	"io/ioutil"
 )
 
 type existsFunc func(string) bool
@@ -20,6 +22,9 @@ func osStatExists(file string) bool {
 
 var ignoreList = [...]string{"/", ".", "./", "..", "../"}
 
+//var rootListing, _ = ioutil.ReadDir("/")
+//var pwdListing, _ = ioutil.ReadDir(".")
+
 func ignored(file string) bool {
 	for _, val := range ignoreList {
 		if file == val {
@@ -30,12 +35,21 @@ func ignored(file string) bool {
 }
 
 func longestFileEndIndex(line []rune, exists existsFunc) int {
+	// Possible optimisations:
+	// 1. this should start at the end - the longest substring first
+	// 2. it could be a good strategy to list files and try to
+	//    find a common prefix - if not just stop right there and then
+	//    from / if it starts with / and if not from `pwd`
+	//    do file listing from / and `pwd` only once
+	//    need to consider relative dirs though which is annoying
+
 	maxIndex := 0
 	for i, _ := range line {
 		slice := line[0 : i+1]
 		file := string(slice)
 		if !ignored(file) {
 			if exists(file) {
+				// TODO if this is not a dir, stop here
 				maxIndex = i
 			}
 		}
