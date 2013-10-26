@@ -21,7 +21,7 @@ func osStatExists(file string) bool {
 func longestFileEndIndex(line []rune, exists existsFunc) int {
 	maxIndex := 0
 	for i, _ := range line {
-		slice := line[0:i+1]
+		slice := line[0 : i+1]
 		file := string(slice)
 		if file != "/" && file != "." && file != "./" && file != ".." && file != "../" {
 			if exists(file) {
