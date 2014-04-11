@@ -9,8 +9,9 @@ import (
 	"github.com/atotto/clipboard"
 	"os"
 	"strconv"
+	"strings"
 
-//	"io/ioutil"
+	//	"io/ioutil"
 )
 
 type existsFunc func(string) bool
@@ -80,6 +81,7 @@ func main() {
 
 	fileCount := 0
 
+	var files []string
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -91,8 +93,9 @@ func main() {
 		if lastCharIndex > 0 {
 			fileCount++
 			file := line[firstCharIndex : lastCharIndex+1]
+			files = append(files, file)
 
-			fmt.Println(strconv.Itoa(fileCount), file)
+			fmt.Println(strconv.Itoa(fileCount), line[:len(line)-1])
 
 			// collect any file position arguments to copy to the
 			// clipboard later
@@ -106,6 +109,27 @@ func main() {
 		} else {
 			fmt.Print(line)
 		}
+	}
+
+	fmt.Println()
+	fmt.Print("to clipboard: ")
+	ttyFile, err := os.Open("/dev/tty")
+	if err != nil {
+		fmt.Printf("failed to read /dev/tty: %s\n", err)
+		return
+	}
+	defer ttyFile.Close()
+	ttyReader := bufio.NewReader(ttyFile)
+	s, err := ttyReader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("failed to read input: %s\n", err)
+		return
+	}
+
+	for _, n := range strings.Fields(s) {
+		i, _ := strconv.Atoi(n)
+		clip.WriteString(files[i-1])
+		clip.WriteString(" ")
 	}
 
 	clipboardOutput := clip.String()
