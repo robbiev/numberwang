@@ -88,49 +88,87 @@ func askUser() (requestedNumbers []string, err error) {
 	return strings.Fields(s), nil
 }
 
-type processFunc func(string, int, int)
+type processFunc func(string, string, int, int)
+
+type Processor interface {
+	processFile(file string)
+	processEnd()
+}
+
+type NumbersGiven struct {
+	clip      *bytes.Buffer
+	fileCount *int
+	numbers   []string
+}
+
+type AskForNumbers struct {
+	clip  *bytes.Buffer
+	files []string
+}
 
 func printProcessor(fileCount *int) processFunc {
-	return func(line string, firstCharIndex int, lastCharIndex int) {
-		//file := line[firstCharIndex : lastCharIndex+1]
+	return func(file string, line string, firstCharIndex int, lastCharIndex int) {
 		fmt.Println(strconv.Itoa(*fileCount), line[:len(line)-1])
 	}
 }
 
-func clipboardProcessor(clip *bytes.Buffer, fileCount *int) processFunc {
-	argsWithoutProg := os.Args[1:]
-	return func(line string, firstCharIndex int, lastCharIndex int) {
-		file := line[firstCharIndex : lastCharIndex+1]
+func (ng *NumbersGiven) processEnd() {
+	writeToClipboard(ng.clip)
+}
 
-		// collect any file position arguments to copy to the
-		// clipboard later
-		for _, v := range argsWithoutProg {
-			n, _ := strconv.Atoi(v)
-			if n == *fileCount {
-				clip.WriteString(file)
-				clip.WriteString(" ")
-			}
+//	argsWithoutProg := os.Args[1:]
+func (ng *NumbersGiven) processFile(file string) {
+
+	// collect any file position arguments to copy to the
+	// clipboard later
+	for _, v := range ng.numbers {
+		n, _ := strconv.Atoi(v)
+		if n == *ng.fileCount {
+			ng.clip.WriteString(file)
+			ng.clip.WriteString(" ")
 		}
 	}
 }
 
-func fileNameCollectingProcessor(files *[]string) processFunc {
-	return func(line string, firstCharIndex int, lastCharIndex int) {
-		file := line[firstCharIndex : lastCharIndex+1]
-		*files = append(*files, file)
+func (afn *AskForNumbers) processEnd() {
+	requestedNumbers, err := askUser()
+	if err != nil {
+		fmt.Printf("failed to read input: %s\n", err)
+		return
+	}
+
+	for _, n := range requestedNumbers {
+		i, _ := strconv.Atoi(n)
+		afn.clip.WriteString(afn.files[i-1])
+		afn.clip.WriteString(" ")
+	}
+
+	writeToClipboard(afn.clip)
+}
+
+func (afn *AskForNumbers) processFile(file string) {
+	afn.files = append(afn.files, file)
+}
+
+func writeToClipboard(buffer *bytes.Buffer) {
+	clipboardOutput := buffer.String()
+	if clipboardOutput != "" {
+		clipboard.WriteAll(clipboardOutput)
 	}
 }
 
 func main() {
-	fileCount := 0
+	var fileCount int
 	var clip bytes.Buffer
-	var files []string
 
-	processors := []processFunc{
-		printProcessor(&fileCount),
-		clipboardProcessor(&clip, &fileCount),
-		fileNameCollectingProcessor(&files),
+	// TODO select the mode of operation here based on flags
+	//processor := AskForNumbers{clip: &clip}
+	processor := NumbersGiven{
+		clip:      &clip,
+		fileCount: &fileCount,
+		numbers:   os.Args[1:],
 	}
+	printer := printProcessor(&fileCount)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -144,28 +182,14 @@ func main() {
 
 		if lastCharIndex > 0 {
 			fileCount++
-			for _, p := range processors {
-				p(line, firstCharIndex, lastCharIndex)
-			}
+			file := line[firstCharIndex : lastCharIndex+1]
+
+			printer(file, line, firstCharIndex, lastCharIndex)
+			processor.processFile(file)
 		} else {
 			fmt.Print(line)
 		}
 	}
 
-	requestedNumbers, err := askUser()
-	if err != nil {
-		fmt.Printf("failed to read input: %s\n", err)
-		return
-	}
-
-	for _, n := range requestedNumbers {
-		i, _ := strconv.Atoi(n)
-		clip.WriteString(files[i-1])
-		clip.WriteString(" ")
-	}
-
-	clipboardOutput := clip.String()
-	if clipboardOutput != "" {
-		clipboard.WriteAll(clipboardOutput)
-	}
+	processor.processEnd()
 }
