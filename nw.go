@@ -90,13 +90,17 @@ func askUser() (requestedNumbers []string, err error) {
 
 type processFunc func(string, int, int)
 
-func lineProcessor(clip *bytes.Buffer, fileCount *int) processFunc {
+func printProcessor(fileCount *int) processFunc {
+	return func(line string, firstCharIndex int, lastCharIndex int) {
+		//file := line[firstCharIndex : lastCharIndex+1]
+		fmt.Println(strconv.Itoa(*fileCount), line[:len(line)-1])
+	}
+}
+
+func clipboardProcessor(clip *bytes.Buffer, fileCount *int) processFunc {
 	argsWithoutProg := os.Args[1:]
 	return func(line string, firstCharIndex int, lastCharIndex int) {
 		file := line[firstCharIndex : lastCharIndex+1]
-		//files = append(files, file)
-
-		fmt.Println(strconv.Itoa(*fileCount), line[:len(line)-1])
 
 		// collect any file position arguments to copy to the
 		// clipboard later
@@ -118,16 +122,17 @@ func fileNameCollectingProcessor(files *[]string) processFunc {
 }
 
 func main() {
+	fileCount := 0
 	var clip bytes.Buffer
+	var files []string
+
+	processors := []processFunc{
+		printProcessor(&fileCount),
+		clipboardProcessor(&clip, &fileCount),
+		fileNameCollectingProcessor(&files),
+	}
 
 	reader := bufio.NewReader(os.Stdin)
-
-	fileCount := 0
-
-	processor := lineProcessor(&clip, &fileCount)
-
-	var files []string
-	fileNameProcessor := fileNameCollectingProcessor(&files)
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -139,8 +144,9 @@ func main() {
 
 		if lastCharIndex > 0 {
 			fileCount++
-			processor(line, firstCharIndex, lastCharIndex)
-			fileNameProcessor(line, firstCharIndex, lastCharIndex)
+			for _, p := range processors {
+				p(line, firstCharIndex, lastCharIndex)
+			}
 		} else {
 			fmt.Print(line)
 		}
