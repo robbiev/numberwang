@@ -1,5 +1,7 @@
+## What
 Numbers any valid file path in stdin (one per line). Copies chosen file names to the clipboard.
 
+## Why
 For example you want to undo some changes you made to a git project:
 ```sh
 $ git st
@@ -36,8 +38,13 @@ Now you can simply paste the file name(s) you selected when performing a checkou
 $ git checkout somwhere/in/a/deeply/nested/directory/program.go 
 ```
 
-To use it with git in particular, I recommend a git alias that preserves colored output, for example:
+## Usage with git
+I recommend a git alias that preserves colored output, for example:
 
 ```st = -c color.status=always status -sb```
+
+Or if you want to go all-in and always call numberwang:
+
+```snw = ! git -c color.status=always status -sb | nw```
 
 Other commands might have similar options to preserve color.
