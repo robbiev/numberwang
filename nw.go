@@ -148,7 +148,7 @@ func (ng *NumbersGiven) processFile(file string) error {
 
 func (afn *AskForNumbers) processEnd() error {
 	if len(afn.files) == 0 {
-		fmt.Println("nw: no files names found, NUMBERWANG!")
+		fmt.Println("nw: no file names found, NUMBERWANG!")
 		return nil
 	}
 	requestedNumbers, err := askUser()
