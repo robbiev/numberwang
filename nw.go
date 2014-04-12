@@ -5,13 +5,12 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/atotto/clipboard"
 	"os"
 	"strconv"
 	"strings"
-
-	//	"io/ioutil"
 )
 
 type existsFunc func(string) bool
@@ -158,15 +157,21 @@ func writeToClipboard(buffer *bytes.Buffer) {
 }
 
 func main() {
+	ask := flag.Bool("a", false, "ask which file names to copy to the clipboard")
+	flag.Parse()
+
 	var fileCount int
 	var clip bytes.Buffer
 
-	// TODO select the mode of operation here based on flags
-	//processor := AskForNumbers{clip: &clip}
-	processor := NumbersGiven{
-		clip:      &clip,
-		fileCount: &fileCount,
-		numbers:   os.Args[1:],
+	var processor Processor
+	if *ask {
+		processor = &AskForNumbers{clip: &clip}
+	} else {
+		processor = &NumbersGiven{
+			clip:      &clip,
+			fileCount: &fileCount,
+			numbers:   os.Args[1:],
+		}
 	}
 	printer := printProcessor(&fileCount)
 
