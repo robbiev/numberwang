@@ -1,16 +1,18 @@
 Numbers any valid file path in stdin (one per line). Copies chosen file names to the clipboard.
 
 ```
-$ ls
-nw*  nw.go
+$ git st
+## master
+ M README.md
+ M program.go
 
-$ ls | nw
-1 nw
-2 nw.go
+$ git st | nw
+## master
+{1}  M {README.md}
+{2}  M {program.go}
 
-$ ls | nw 1 2
-1 nw
-2 nw.go
+to clipboard: 1 2
+nw: wrote "README.md program.go " to clipboard
 
-# the string 'nw nw.go ' is now on the clipboard
+$ git checkout README.md program.go 
 ```
