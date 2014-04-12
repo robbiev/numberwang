@@ -72,16 +72,63 @@ func longestFileInLine(line string, exists existsFunc) (firstCharIndex int, last
 	return firstCharIndex, lastCharIndex
 }
 
+func askUser() (requestedNumbers []string, err error) {
+	fmt.Println()
+	fmt.Print("to clipboard: ")
+	ttyFile, err := os.Open("/dev/tty")
+	if err != nil {
+		return nil, err
+	}
+	defer ttyFile.Close()
+	ttyReader := bufio.NewReader(ttyFile)
+	s, err := ttyReader.ReadString('\n')
+	if err != nil {
+		return nil, err
+	}
+	return strings.Fields(s), nil
+}
+
+type processFunc func(string, int, int)
+
+func lineProcessor(clip *bytes.Buffer, fileCount *int) processFunc {
+	argsWithoutProg := os.Args[1:]
+	return func(line string, firstCharIndex int, lastCharIndex int) {
+		file := line[firstCharIndex : lastCharIndex+1]
+		//files = append(files, file)
+
+		fmt.Println(strconv.Itoa(*fileCount), line[:len(line)-1])
+
+		// collect any file position arguments to copy to the
+		// clipboard later
+		for _, v := range argsWithoutProg {
+			n, _ := strconv.Atoi(v)
+			if n == *fileCount {
+				clip.WriteString(file)
+				clip.WriteString(" ")
+			}
+		}
+	}
+}
+
+func fileNameCollectingProcessor(files *[]string) processFunc {
+	return func(line string, firstCharIndex int, lastCharIndex int) {
+		file := line[firstCharIndex : lastCharIndex+1]
+		*files = append(*files, file)
+	}
+}
+
 func main() {
 	var clip bytes.Buffer
-
-	argsWithoutProg := os.Args[1:]
 
 	reader := bufio.NewReader(os.Stdin)
 
 	fileCount := 0
 
+	processor := lineProcessor(&clip, &fileCount)
+
 	var files []string
+	fileNameProcessor := fileNameCollectingProcessor(&files)
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -92,41 +139,20 @@ func main() {
 
 		if lastCharIndex > 0 {
 			fileCount++
-			file := line[firstCharIndex : lastCharIndex+1]
-			files = append(files, file)
-
-			fmt.Println(strconv.Itoa(fileCount), line[:len(line)-1])
-
-			// collect any file position arguments to copy to the
-			// clipboard later
-			for _, v := range argsWithoutProg {
-				n, _ := strconv.Atoi(v)
-				if n == fileCount {
-					clip.WriteString(file)
-					clip.WriteString(" ")
-				}
-			}
+			processor(line, firstCharIndex, lastCharIndex)
+			fileNameProcessor(line, firstCharIndex, lastCharIndex)
 		} else {
 			fmt.Print(line)
 		}
 	}
 
-	fmt.Println()
-	fmt.Print("to clipboard: ")
-	ttyFile, err := os.Open("/dev/tty")
-	if err != nil {
-		fmt.Printf("failed to read /dev/tty: %s\n", err)
-		return
-	}
-	defer ttyFile.Close()
-	ttyReader := bufio.NewReader(ttyFile)
-	s, err := ttyReader.ReadString('\n')
+	requestedNumbers, err := askUser()
 	if err != nil {
 		fmt.Printf("failed to read input: %s\n", err)
 		return
 	}
 
-	for _, n := range strings.Fields(s) {
+	for _, n := range requestedNumbers {
 		i, _ := strconv.Atoi(n)
 		clip.WriteString(files[i-1])
 		clip.WriteString(" ")
