@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 type existsFunc func(string) bool
@@ -135,7 +136,7 @@ func (ng *NumbersGiven) processFile(file string) error {
 	for _, v := range ng.numbers {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s is not a number\n", v)
+			fmt.Fprintf(os.Stderr, "nw: %s is not a number\n", v)
 			return err
 		}
 		if n == *ng.fileCount {
@@ -147,17 +148,25 @@ func (ng *NumbersGiven) processFile(file string) error {
 }
 
 func (afn *AskForNumbers) processEnd() error {
+	if len(afn.files) == 0 {
+		fmt.Println("nw: no files names found, NUMBERWANG!")
+		return nil
+	}
 	requestedNumbers, err := askUser()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read input: %s\n", err)
+		fmt.Fprintf(os.Stderr, "nw: failed to read input: %s\n", err)
 		return err
 	}
 
 	for _, n := range requestedNumbers {
 		i, err := strconv.Atoi(n)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s is not a number\n", n)
+			fmt.Fprintf(os.Stderr, "nw: %s is not a number\n", n)
 			return err
+		}
+		if i <= 0 || i > len(afn.files) {
+			fmt.Fprintf(os.Stderr, "nw: %s is not a valid choice\n", n)
+			return errors.New("invalid choice")
 		}
 		afn.clip.WriteString(afn.files[i-1])
 		afn.clip.WriteString(" ")
@@ -176,7 +185,7 @@ func writeToClipboard(buffer *bytes.Buffer) {
 	clipboardOutput := buffer.String()
 	if clipboardOutput != "" {
 		clipboard.WriteAll(clipboardOutput)
-		fmt.Printf("wrote \"%s\" to clipboard\n", clipboardOutput)
+		fmt.Printf("nw: wrote \"%s\" to clipboard\n", clipboardOutput)
 	}
 }
 
