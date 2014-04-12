@@ -1,5 +1,4 @@
 // vim: tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab tw=72
-//http://stackoverflow.com/questions/8757389/reading-file-line-by-line-in-go
 package main
 
 import (
