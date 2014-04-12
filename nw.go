@@ -4,13 +4,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/atotto/clipboard"
 	"os"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 type existsFunc func(string) bool
@@ -233,7 +233,7 @@ func main() {
 			if err != nil {
 				os.Exit(1)
 			}
-		} else if (!*short) {
+		} else if !*short {
 			fmt.Print(line)
 		}
 	}
