@@ -71,9 +71,9 @@ func longestFileInLine(line string, exists existsFunc) (firstCharIndex int, last
 	return firstCharIndex, lastCharIndex
 }
 
-func askUser() (requestedNumbers []string, err error) {
+func askUser(question string) (requestedNumbers []string, err error) {
 	fmt.Println()
-	fmt.Print("to clipboard: ")
+	fmt.Print(question)
 	ttyFile, err := os.Open("/dev/tty")
 	if err != nil {
 		return nil, err
@@ -98,11 +98,13 @@ type NumbersGiven struct {
 	clip      *bytes.Buffer
 	fileCount *int
 	numbers   []string
+	invert    bool
 }
 
 type AskForNumbers struct {
-	clip  *bytes.Buffer
-	files []string
+	clip   *bytes.Buffer
+	files  []string
+	invert bool
 }
 
 func printShortFormat(fileCount *int) PrintFunction {
@@ -130,18 +132,26 @@ func (ng *NumbersGiven) processEnd() error {
 }
 
 func (ng *NumbersGiven) processFile(file string) error {
-	// collect any file position arguments to copy to the
-	// clipboard later
 	for _, v := range ng.numbers {
 		n, err := strconv.Atoi(v)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "nw: %s is not a number\n", v)
 			return err
 		}
-		if n == *ng.fileCount {
-			ng.clip.WriteString(file)
-			ng.clip.WriteString(" ")
+		found := (n == *ng.fileCount)
+		if found {
+			if found != ng.invert {
+				ng.clip.WriteString(file)
+				ng.clip.WriteString(" ")
+			}
+			return nil
 		}
+	}
+
+	// not found in given numbers, so always a match if inverted
+	if ng.invert {
+		ng.clip.WriteString(file)
+		ng.clip.WriteString(" ")
 	}
 	return nil
 }
@@ -151,12 +161,17 @@ func (afn *AskForNumbers) processEnd() error {
 		fmt.Println("nw: no file names found, NUMBERWANG!")
 		return nil
 	}
-	requestedNumbers, err := askUser()
+	question := "to clipboard: "
+	if afn.invert {
+		question = "NOT " + question
+	}
+	requestedNumbers, err := askUser(question)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nw: failed to read input: %s\n", err)
 		return err
 	}
 
+	reqIndexes := make(map[int]struct{})
 	for _, n := range requestedNumbers {
 		i, err := strconv.Atoi(n)
 		if err != nil {
@@ -167,8 +182,14 @@ func (afn *AskForNumbers) processEnd() error {
 			fmt.Fprintf(os.Stderr, "nw: %s is not a valid choice\n", n)
 			return errors.New("invalid choice")
 		}
-		afn.clip.WriteString(afn.files[i-1])
-		afn.clip.WriteString(" ")
+		reqIndexes[i-1] = struct{}{}
+	}
+
+	for i, file := range afn.files {
+		if _, exists := reqIndexes[i]; exists != afn.invert {
+			afn.clip.WriteString(file)
+			afn.clip.WriteString(" ")
+		}
 	}
 
 	writeToClipboard(afn.clip)
@@ -193,18 +214,20 @@ func main() {
 	var clip bytes.Buffer
 
 	short := flag.Bool("s", false, "short format, only display file names")
+	invert := flag.Bool("i", false, "copy the inverse of the selection to the clipboard")
 	flag.Parse()
 
 	extraArgs := flag.Args()
 
 	var processor Processor
 	if len(extraArgs) == 0 {
-		processor = &AskForNumbers{clip: &clip}
+		processor = &AskForNumbers{clip: &clip, invert: *invert}
 	} else {
 		processor = &NumbersGiven{
 			clip:      &clip,
 			fileCount: &fileCount,
 			numbers:   extraArgs,
+			invert:    *invert,
 		}
 	}
 	var printer PrintFunction
