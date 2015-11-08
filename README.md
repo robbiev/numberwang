@@ -20,7 +20,7 @@ $ git st | nw
 
 to clipboard: 
 ```
-You now got prompted to choose file names to copy to the clipboard. You choose "2".
+You now got prompted to choose file names to copy to the clipboard. You choose "2" (you can select multiple files by typing multiple numbers separated by a space).
 
 ```sh
 $ git st | nw
